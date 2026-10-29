@@ -1,0 +1,16 @@
+:root {
+  font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  color: #25372e;
+  background: #f8f7f2;
+  --ink: #25372e;
+  --green: #246047;
+  --muted: #646b62;
+  --line: #dcded4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+p { margin: 0; }
