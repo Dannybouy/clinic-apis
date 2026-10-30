@@ -58,7 +58,8 @@ Open [localhost:5173](http://localhost:5173) and choose **Check connection**. A 
 | `npm run build` | Builds the frontend and Go executable |
 | `npm start` | Runs the built app at localhost:8080 |
 | `npm run lint` | Checks frontend code |
-| `npm test` | Runs Go tests, including race detection |
+| `npm test` | Loads local settings, then runs Go tests and race detection |
+| `npm run db:generate` | Regenerates Go database code from SQL |
 | `npm run test:smoke` | Checks a running app through HTTP |
 
 ## The proxy
@@ -85,13 +86,37 @@ The backend reads existing environment variables first, then `.env.local`, then 
 
 Real credentials stay out of Git and Docker images. No frontend environment variables are required. Anything named `VITE_*` is public browser configuration, so never put database credentials or API keys there. The future assessment API key will need its own access-control implementation.
 
-This initial connection uses the requested `production` branch. Before implementing booking writes, use a separate development branch. Tests must use `TEST_DATABASE_URL`; they never automatically reuse `DATABASE_URL`.
+Local development uses `clinic_dev`, and integration tests use `clinic_test`. Set the local connection strings in `.env.local`; the original Neon configuration can be kept separately in the ignored `.env.neon.local` file. Render continues to use its own Neon environment variable. Tests must use `TEST_DATABASE_URL`; they never automatically reuse `DATABASE_URL`.
+
+Running `neon deploy` pulls the linked branch's credentials into the local environment file again. Check the database target before continuing local development after that command.
+
+## Local schema and queries
+
+Goose applies the versioned SQL files in `backend/database/schema/`. sqlc reads those same files plus `backend/database/queries/`, then writes Go code into `backend/internal/database/`. Do not edit generated files.
+
+After setting these variables to your local databases, apply migrations to both databases:
+
+```sh
+export DATABASE_URL_UNPOOLED='postgresql://YOUR_LOCAL_USER@127.0.0.1:5432/clinic_dev?sslmode=disable'
+export TEST_DATABASE_URL='postgresql://YOUR_LOCAL_USER@127.0.0.1:5432/clinic_test?sslmode=disable'
+GOOSE_DRIVER=postgres GOOSE_DBSTRING="$DATABASE_URL_UNPOOLED" goose -dir backend/database/schema up
+GOOSE_DRIVER=postgres GOOSE_DBSTRING="$TEST_DATABASE_URL" goose -dir backend/database/schema up
+npm run db:generate
+npm test
+```
+
+Replace `YOUR_LOCAL_USER` with your PostgreSQL role. These commands use exported values; a shell does not automatically load `.env.local`.
+
+Migration `001` stays unchanged because it was already applied locally. Migration `002` accepts string slot IDs and timezone-aware timestamps, treating original timestamps as UTC. Migration `003` adds bookings so availability can be calculated. Reverting migration `002` requires all remaining slot IDs to be valid UUIDs; production schema changes should normally move forward with new migrations.
+
+Slot tests use temporary tables copied from the migrated schema and roll back their fixtures. Existing development and test records are not cleared.
 
 ## GitHub checks
 
 Every pull request, push to `main`, or manual workflow run checks:
 
 - Go formatting, static checks, tests, and race detection.
+- Applying migrations and checking generated sqlc code.
 - A real PostgreSQL connection through an HTTP endpoint.
 - Frontend lint, TypeScript checking, and production build.
 - The built app's page, JavaScript, database connection, and handling of private files.
@@ -108,6 +133,8 @@ Work on a branch, open a pull request, and merge after **App checks / Build and 
 3. Render builds React and Go with the root Dockerfile. It supplies the server port automatically.
 4. Verify the page and `/api/health` on the resulting HTTPS URL.
 
+Before deploying code that reads slots, apply the schema migrations to Neon using its direct `DATABASE_URL_UNPOOLED` connection. The Docker image does not run goose automatically. `neon deploy` does not apply these SQL migrations.
+
 The Blueprint selects the free plan and deploys future changes after GitHub checks pass. `/healthz` checks that the server is running; `/api/health` also checks PostgreSQL. Render hosting has not been provisioned by the Neon setup.
 
 The free Render service sleeps after 15 idle minutes, so its first request may take about a minute. [Render free hosting](https://render.com/docs/free).
@@ -119,7 +146,19 @@ The free Render service sleeps after 15 idle minutes, so its first request may t
 | `GET /` | Built frontend |
 | `GET /healthz` | Server health |
 | `GET /api/health` | Server and database health |
+| `GET /slots` | Every slot, ordered by start time |
+| `GET /slots?provider=Dr%20Ade` | Slots for exactly this provider |
 
-The assessment's booking endpoints and database migrations will be added level by level. Health checks do not create patient records or change the database schema.
+The slots response is `{"slots":[...]}`. Each entry contains `id`, `provider`, `start`, `end`, and `available`. Missing provider means all providers; a supplied provider matches exactly, including its case and whitespace. No matching slots returns `{"slots":[]}`.
+
+The [assessment contract](https://koyaacademy.com/assessment-api) includes past and booked slots in this response. `available` is false only while a confirmed booking exists. Cancelled bookings do not block a slot. The already-started check belongs to creating a booking, not listing slots.
+
+With `npm run dev` running, test through the frontend proxy:
+
+```sh
+curl --get --data-urlencode 'provider=Dr Ade' http://127.0.0.1:5173/slots
+```
+
+The assessment's booking endpoints will be added level by level. Health checks and slot listing do not create patient records or change the database schema. API-key enforcement is a Level 2 feature and is not implemented yet.
 
 Connection choices follow [Neon's Go guide](https://neon.com/docs/guides/go): `pgx/v5`, a small connection pool, timeouts, and server-side credentials. The proxy follows [Vite's server configuration](https://vite.dev/config/server-options#server-proxy).

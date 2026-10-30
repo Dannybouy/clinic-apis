@@ -12,10 +12,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dannybouy/clinic-apis/backend/api"
 	"github.com/dannybouy/clinic-apis/backend/database"
+	queries "github.com/dannybouy/clinic-apis/backend/internal/database"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
+
+type apiConfig struct {
+	pool *pgxpool.Pool
+	db   queries.Querier
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -32,14 +38,6 @@ func run() error {
 		}
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	pool, err := database.Open(ctx, os.Getenv("DATABASE_URL"))
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -48,9 +46,50 @@ func run() error {
 	if frontendDir == "" {
 		frontendDir = "frontend/dist"
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	pool, err := database.Open(ctx, os.Getenv("DATABASE_URL"))
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	cfg := &apiConfig{
+		pool: pool,
+		db:   queries.New(pool),
+	}
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /healthz", handlerReadiness)
+	mux.HandleFunc("GET /api/health", cfg.handlerDatabaseHealth)
+
+	mux.HandleFunc("GET /slots", cfg.handlerListSlots)
+	if os.Getenv("PLATFORM") == "dev" {
+		mux.HandleFunc("POST /slots", cfg.handlerCreateSlot)
+	}
+	mux.HandleFunc("/slots", handlerSlotsMethodNotAllowed)
+	mux.HandleFunc("POST /reset", cfg.handlerResetSlots)
+
+	// Register bookings endpoint
+	mux.HandleFunc("POST /bookings", cfg.handlerCreateBooking)
+	mux.HandleFunc("GET /bookings", cfg.handlerListBookings)
+	mux.HandleFunc("GET /bookings/{id}", cfg.handlerGetBookingByID)
+	mux.HandleFunc("DELETE /bookings/{id}", cfg.handlerDeleteBookingByID)
+
+	// Keep assessment endpoints available at their specified paths in future levels.
+	mux.HandleFunc("/api/", handlerNotFound)
+	mux.HandleFunc("/slots/", handlerNotFound)
+	mux.HandleFunc("/bookings", handlerNotFound)
+	mux.HandleFunc("/bookings/", handlerNotFound)
+	mux.HandleFunc("/reset", handlerNotFound)
+
+	mux.Handle("/", handlerFrontend(frontendDir))
+
 	server := &http.Server{
 		Addr:              net.JoinHostPort("", port),
-		Handler:           api.NewHandler(pool, frontendDir),
+		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      20 * time.Second,

@@ -13,7 +13,9 @@
     "build:backend": "go build -o dist/clinic-api ./backend",
     "start": "./dist/clinic-api",
     "lint": "npm run lint --workspace frontend",
-    "test": "go test -race ./backend/...",
+    "test": "node --env-file-if-exists=.env.local --run test:go",
+    "test:go": "go test -race ./backend/...",
+    "db:generate": "sqlc generate",
     "test:smoke": "node scripts/smoke.mjs",
     "neon:deploy": "neon deploy"
   },
