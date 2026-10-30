@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func frontend(directory string) http.Handler {
+func handlerFrontend(directory string) http.Handler {
 	files := http.FileServer(http.Dir(directory))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {

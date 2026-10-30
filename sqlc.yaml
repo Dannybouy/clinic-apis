@@ -1,0 +1,12 @@
+version: "2"
+
+sql:
+  - engine: "postgresql"
+    schema: "backend/database/schema"
+    queries: "backend/database/queries"
+    gen:
+      go:
+        package: "database"
+        out: "backend/internal/database"
+        sql_package: "pgx/v5"
+        emit_interface: true
