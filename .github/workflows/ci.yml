@@ -35,6 +35,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/clinic_test?sslmode=disable
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/clinic_test?sslmode=disable
+      API_KEY: ci-test-key
     steps:
       - uses: actions/checkout@v7
         with:
@@ -84,6 +85,6 @@ jobs:
         run: docker build -t clinic-apis:ci .
       - name: Test the deployment container
         run: |
-          docker run -d --name clinic-ci --network host -e DATABASE_URL -e PORT=8082 clinic-apis:ci
+          docker run -d --name clinic-ci --network host -e DATABASE_URL -e API_KEY -e PORT=8082 clinic-apis:ci
           trap 'docker rm -f clinic-ci' EXIT
           SMOKE_BASE_URL=http://127.0.0.1:8082 npm run test:smoke || { docker logs clinic-ci; exit 1; }

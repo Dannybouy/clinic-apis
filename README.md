@@ -100,10 +100,11 @@ Set `PORT` in the root environment file to change Go's port; the development pro
 | `FRONTEND_DIST` | Go | Built frontend folder, defaults to `frontend/dist` |
 | `BACKEND_URL` | Vite configuration | Optional development proxy target |
 | `TEST_DATABASE_URL` | Tests | Separate PostgreSQL test database |
+| `API_KEY` | Go | Value callers send in the `X-API-Key` header |
 
 The backend reads existing environment variables first, then `.env.local`, then `.env`. Existing values win. `.env.example` documents placeholders; do not replace the real Neon file with it.
 
-Real credentials stay out of Git and Docker images. No frontend environment variables are required. Anything named `VITE_*` is public browser configuration, so never put database credentials or API keys there. The future assessment API key will need its own access-control implementation.
+Real credentials stay out of Git and Docker images. No frontend environment variables are required. Anything named `VITE_*` is public browser configuration, so never put database credentials there. `API_KEY` is the assessment key you choose. The page reads it from the server and sends it back as `X-API-Key`.
 
 Local development uses `clinic_dev`, and integration tests use `clinic_test`. Set the local connection strings in `.env.local`; the original Neon configuration can be kept separately in the ignored `.env.neon.local` file. Render continues to use its own Neon environment variable. Tests must use `TEST_DATABASE_URL`; they never automatically reuse `DATABASE_URL`.
 
@@ -178,6 +179,6 @@ With `npm run dev` running, test through the frontend proxy:
 curl --get --data-urlencode 'provider=Dr Ade' http://127.0.0.1:5173/slots
 ```
 
-The assessment's booking endpoints will be added level by level. Health checks and slot listing do not create patient records or change the database schema. API-key enforcement is a Level 2 feature and is not implemented yet.
+`/slots`, `/bookings`, and `/reset` require the `X-API-Key` header. A missing or wrong key returns 401 with `{"error":"invalid API key"}`. Health checks and the web page do not. The page loads the key from `GET /api/config`, then sends it on later requests.
 
 Connection choices follow [Neon's Go guide](https://neon.com/docs/guides/go): `pgx/v5`, a small connection pool, timeouts, and server-side credentials. The proxy follows [Vite's server configuration](https://vite.dev/config/server-options#server-proxy).
