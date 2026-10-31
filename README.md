@@ -2,7 +2,26 @@
 
 A clinic appointment booking project built with React, Go, and PostgreSQL.
 
-**Current stage:** the frontend, API, and Neon database are connected. The page lets you check that connection. Appointment booking comes next; assessment levels are not implemented yet.
+**Current stage:** all five assessment levels are implemented. The page at `/` is a booking app with a built-in API inspector and a checklist that exercises each level against the live API.
+
+## Reviewing this project
+
+Live site: <https://clinic-apis.onrender.com>. It runs on Render's free plan, so the first request after a quiet spell can take about a minute while the server wakes up. The dot in the header turns green once the server and database answer.
+
+1. Open **Demo controls → Load sample schedule**. This replaces all slots and deletes every booking in the shared demo, then loads 4 doctors over the next 5 weekdays plus one slot from yesterday.
+2. Book a slot from **Find a slot**, then open **My bookings**.
+3. In **Demo controls**, choose **Run all** to check every scenario below. Each scenario uses its own random email, so the rate limit never interferes between them.
+
+| Spec level | Where it shows up in the UI | Scenario |
+| --- | --- | --- |
+| Level 1: booking succeeds with 201 | Booking dialog | 1 |
+| Level 2: validation, 404, slot already started, trimming and lowercasing | Booking dialog errors, **Started** badge | 5, 6, 7 |
+| Level 3: 409, including under concurrency | **Booked** badge, booking dialog error | 1, 2 |
+| Level 4: `Idempotency-Key`, replay and 422 | Every booking from the dialog sends a key | 3, 4 |
+| Level 5: rate limit, 429 with `Retry-After` | Booking dialog message | 10 |
+| List, pagination, find by ID, cancel | **My bookings** tab (page size, **Load more**, **Find a booking by ID**, **Cancel**) | 8, 9, 11 |
+
+The **API inspector** (right-hand panel on desktop, **Inspector** button on mobile) logs every request the page makes: method, URL, status, timing, request and response headers such as `Idempotency-Key` and `Retry-After`, and both bodies. **Copy as curl** on any entry reproduces that request from a terminal.
 
 ## How the app fits together
 
@@ -12,7 +31,7 @@ Patient's browser → React page → Go API → Neon PostgreSQL
 
 | Folder or file | Purpose |
 | --- | --- |
-| `frontend/` | What a visitor sees, built with Vite, React, and TypeScript |
+| `frontend/` | What a visitor sees, built with Vite, React, TypeScript, Tailwind, and shadcn/ui |
 | `backend/api/` | HTTP endpoints and their tests |
 | `backend/database/` | PostgreSQL connection |
 | `backend/main.go` | Starts the Go server |
@@ -50,7 +69,7 @@ Complete sign-in in your browser. If global installation fails, use `npx neon@la
 npm run dev
 ```
 
-Open [localhost:5173](http://localhost:5173) and choose **Check connection**. A successful check means the page reached Go, and Go reached PostgreSQL.
+Open [localhost:5173](http://localhost:5173). A green dot in the header means the page reached Go, and Go reached PostgreSQL. **Load sample schedule** wipes slots and bookings, so point `DATABASE_URL` at a throwaway database such as `clinic_test` before using it locally.
 
 | Command | What it does |
 | --- | --- |
