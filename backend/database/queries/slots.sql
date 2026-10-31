@@ -27,5 +27,18 @@ VALUES (
 )
 RETURNING *;
 
+-- name: CreateSlots :exec
+-- One statement, so resetting a full sample week is a single database round trip.
+INSERT INTO slots (id, provider, start_time, end_time)
+SELECT
+    COALESCE(NULLIF(ids.id, ''), gen_random_uuid()::text),
+    providers.provider,
+    starts.start_time,
+    ends.end_time
+FROM unnest(sqlc.arg(ids)::text[]) WITH ORDINALITY AS ids(id, ord)
+JOIN unnest(sqlc.arg(providers)::text[]) WITH ORDINALITY AS providers(provider, ord) USING (ord)
+JOIN unnest(sqlc.arg(start_times)::timestamptz[]) WITH ORDINALITY AS starts(start_time, ord) USING (ord)
+JOIN unnest(sqlc.arg(end_times)::timestamptz[]) WITH ORDINALITY AS ends(end_time, ord) USING (ord);
+
 -- name: DeleteAllSlots :exec
 DELETE FROM slots;

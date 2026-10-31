@@ -160,21 +160,32 @@ func (cfg *apiConfig) handlerResetSlots(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	//Create new slots: orderly
-	for _, slot := range params.Slots {
-		_, err := q.CreateSlot(ctx, queries.CreateSlotParams{
-			ID:        slot.ID,
-			Provider:  slot.Provider,
-			StartTime: pgtype.Timestamptz{Time: slot.Start, Valid: true},
-			EndTime:   pgtype.Timestamptz{Time: slot.End, Valid: true},
+	// One insert for the whole schedule. A sample week is about 120 slots, and
+	// one round trip per slot exceeds the request deadline on a remote database.
+	if len(params.Slots) > 0 {
+		ids := make([]string, len(params.Slots))
+		providers := make([]string, len(params.Slots))
+		starts := make([]pgtype.Timestamptz, len(params.Slots))
+		ends := make([]pgtype.Timestamptz, len(params.Slots))
+		for i, slot := range params.Slots {
+			ids[i] = slot.ID
+			providers[i] = slot.Provider
+			starts[i] = pgtype.Timestamptz{Time: slot.Start, Valid: true}
+			ends[i] = pgtype.Timestamptz{Time: slot.End, Valid: true}
+		}
+		err = q.CreateSlots(ctx, queries.CreateSlotsParams{
+			Ids:        ids,
+			Providers:  providers,
+			StartTimes: starts,
+			EndTimes:   ends,
 		})
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			respondWithError(w, http.StatusConflict, "a slot with this id already exists: "+slot.ID, nil)
+			respondWithError(w, http.StatusConflict, slotConflictMessage("a slot with this id already exists", pgErr), nil)
 			return
 		}
 		if errors.As(err, &pgErr) && pgErr.Code == "23P01" {
-			respondWithError(w, http.StatusConflict, "provider already has a slot overlapping this time: "+slot.Provider, nil)
+			respondWithError(w, http.StatusConflict, slotConflictMessage("provider already has a slot overlapping this time", pgErr), nil)
 			return
 		}
 		if err != nil {
@@ -190,4 +201,11 @@ func (cfg *apiConfig) handlerResetSlots(w http.ResponseWriter, r *http.Request) 
 
 	respondWithJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 
+}
+
+func slotConflictMessage(base string, pgErr *pgconn.PgError) string {
+	if pgErr.Detail == "" {
+		return base
+	}
+	return base + ": " + pgErr.Detail
 }
