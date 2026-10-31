@@ -186,6 +186,7 @@ func (cfg *apiConfig) handlerResetSlots(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusInternalServerError, "could not commit reset transaction", err)
 		return
 	}
+	cfg.limiter.reset()
 
 	respondWithJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 

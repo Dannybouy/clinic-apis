@@ -19,8 +19,9 @@ import (
 )
 
 type apiConfig struct {
-	pool *pgxpool.Pool
-	db   queries.Querier
+	pool    *pgxpool.Pool
+	db      queries.Querier
+	limiter *rateLimiter
 }
 
 func main() {
@@ -56,8 +57,9 @@ func run() error {
 	defer pool.Close()
 
 	cfg := &apiConfig{
-		pool: pool,
-		db:   queries.New(pool),
+		pool:    pool,
+		db:      queries.New(pool),
+		limiter: newRateLimiter(),
 	}
 
 	mux := http.NewServeMux()
