@@ -48,6 +48,37 @@ func (q *Queries) CreateSlot(ctx context.Context, arg CreateSlotParams) (Slot, e
 	return i, err
 }
 
+const createSlots = `-- name: CreateSlots :exec
+INSERT INTO slots (id, provider, start_time, end_time)
+SELECT
+    COALESCE(NULLIF(ids.id, ''), gen_random_uuid()::text),
+    providers.provider,
+    starts.start_time,
+    ends.end_time
+FROM unnest($1::text[]) WITH ORDINALITY AS ids(id, ord)
+JOIN unnest($2::text[]) WITH ORDINALITY AS providers(provider, ord) USING (ord)
+JOIN unnest($3::timestamptz[]) WITH ORDINALITY AS starts(start_time, ord) USING (ord)
+JOIN unnest($4::timestamptz[]) WITH ORDINALITY AS ends(end_time, ord) USING (ord)
+`
+
+type CreateSlotsParams struct {
+	Ids        []string
+	Providers  []string
+	StartTimes []pgtype.Timestamptz
+	EndTimes   []pgtype.Timestamptz
+}
+
+// One statement, so resetting a full sample week is a single database round trip.
+func (q *Queries) CreateSlots(ctx context.Context, arg CreateSlotsParams) error {
+	_, err := q.db.Exec(ctx, createSlots,
+		arg.Ids,
+		arg.Providers,
+		arg.StartTimes,
+		arg.EndTimes,
+	)
+	return err
+}
+
 const deleteAllSlots = `-- name: DeleteAllSlots :exec
 DELETE FROM slots
 `

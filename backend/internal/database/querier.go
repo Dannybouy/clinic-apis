@@ -14,6 +14,8 @@ type Querier interface {
 	ClaimIdempotencyKey(ctx context.Context, arg ClaimIdempotencyKeyParams) (int64, error)
 	CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error)
 	CreateSlot(ctx context.Context, arg CreateSlotParams) (Slot, error)
+	// One statement, so resetting a full sample week is a single database round trip.
+	CreateSlots(ctx context.Context, arg CreateSlotsParams) error
 	DeleteAllBookings(ctx context.Context) error
 	DeleteAllIdempotencyKeys(ctx context.Context) error
 	DeleteAllSlots(ctx context.Context) error
