@@ -11,6 +11,13 @@ export type RequestOptions = {
 // A sleeping Render instance can take about a minute to answer.
 const TIMEOUT_MS = 90_000
 
+let apiKey = ''
+
+/** Called once at startup with the key from GET /api/config. */
+export function setAPIKey(key: string) {
+  apiKey = key
+}
+
 function headersToObject(headers: Headers) {
   const result: Record<string, string> = {}
   headers.forEach((value, key) => {
@@ -25,6 +32,7 @@ export async function request<T>(
   options: RequestOptions = {},
 ): Promise<ApiResponse<T>> {
   const requestHeaders: Record<string, string> = { Accept: 'application/json', ...options.headers }
+  if (apiKey) requestHeaders['X-API-Key'] = apiKey
   let requestBody: string | undefined
   if (options.body !== undefined) {
     requestBody = JSON.stringify(options.body)

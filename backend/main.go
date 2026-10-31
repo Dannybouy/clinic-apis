@@ -22,6 +22,7 @@ type apiConfig struct {
 	pool    *pgxpool.Pool
 	db      queries.Querier
 	limiter *rateLimiter
+	apiKey  string
 }
 
 func main() {
@@ -56,36 +57,41 @@ func run() error {
 	}
 	defer pool.Close()
 
+	apiKey := os.Getenv("API_KEY")
+	if apiKey == "" {
+		return errors.New("API_KEY is missing; choose a key and set it in the environment")
+	}
+
 	cfg := &apiConfig{
 		pool:    pool,
 		db:      queries.New(pool),
 		limiter: newRateLimiter(),
+		apiKey:  apiKey,
 	}
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/health", cfg.handlerDatabaseHealth)
+	mux.HandleFunc("GET /api/config", cfg.handlerAPIConfig)
 
-	mux.HandleFunc("GET /slots", cfg.handlerListSlots)
+	mux.HandleFunc("GET /slots", cfg.requireAPIKey(cfg.handlerListSlots))
 	if os.Getenv("PLATFORM") == "dev" {
-		mux.HandleFunc("POST /slots", cfg.handlerCreateSlot)
+		mux.HandleFunc("POST /slots", cfg.requireAPIKey(cfg.handlerCreateSlot))
 	}
-	mux.HandleFunc("/slots", handlerSlotsMethodNotAllowed)
-	mux.HandleFunc("POST /reset", cfg.handlerResetSlots)
+	mux.HandleFunc("/slots", cfg.requireAPIKey(handlerSlotsMethodNotAllowed))
+	mux.HandleFunc("POST /reset", cfg.requireAPIKey(cfg.handlerResetSlots))
 
-	// Register bookings endpoint
-	mux.HandleFunc("POST /bookings", cfg.handlerCreateBooking)
-	mux.HandleFunc("GET /bookings", cfg.handlerListBookings)
-	mux.HandleFunc("GET /bookings/{id}", cfg.handlerGetBookingByID)
-	mux.HandleFunc("DELETE /bookings/{id}", cfg.handlerDeleteBookingByID)
+	mux.HandleFunc("POST /bookings", cfg.requireAPIKey(cfg.handlerCreateBooking))
+	mux.HandleFunc("GET /bookings", cfg.requireAPIKey(cfg.handlerListBookings))
+	mux.HandleFunc("GET /bookings/{id}", cfg.requireAPIKey(cfg.handlerGetBookingByID))
+	mux.HandleFunc("DELETE /bookings/{id}", cfg.requireAPIKey(cfg.handlerDeleteBookingByID))
 
-	// Keep assessment endpoints available at their specified paths in future levels.
 	mux.HandleFunc("/api/", handlerNotFound)
-	mux.HandleFunc("/slots/", handlerNotFound)
-	mux.HandleFunc("/bookings", handlerNotFound)
-	mux.HandleFunc("/bookings/", handlerNotFound)
-	mux.HandleFunc("/reset", handlerNotFound)
+	mux.HandleFunc("/slots/", cfg.requireAPIKey(handlerNotFound))
+	mux.HandleFunc("/bookings", cfg.requireAPIKey(handlerNotFound))
+	mux.HandleFunc("/bookings/", cfg.requireAPIKey(handlerNotFound))
+	mux.HandleFunc("/reset", cfg.requireAPIKey(handlerNotFound))
 
 	mux.Handle("/", handlerFrontend(frontendDir))
 
