@@ -1,16 +1,235 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
-  color: #25372e;
-  background: #f8f7f2;
-  --ink: #25372e;
-  --green: #246047;
-  --muted: #646b62;
-  --line: #dcded4;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Koya Clinic palette: warm paper, deep clinic green. */
+  --paper: #f5f3ea;
+  --paper-deep: #ebe8db;
+  --ink: #1b2a22;
+  --green: #1f5c43;
+  --green-bright: #2f7d5b;
+  --green-wash: #e1ebe2;
+  --amber: #a5651a;
+  --amber-wash: #f6ead6;
+  --red: #b0412e;
+  --red-wash: #f6e1dc;
+
+  /* The inspector is the "instrument" beside the paper. */
+  --scope: #0d1712;
+  --scope-raised: #142219;
+  --scope-line: #22352a;
+  --scope-text: #cfe1d5;
+  --scope-dim: #71907f;
+  --scope-green: #63d69e;
+  --scope-amber: #f0b45b;
+  --scope-red: #f07b67;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: #fffdf6;
+  --card-foreground: var(--ink);
+  --popover: #fffdf6;
+  --popover-foreground: var(--ink);
+  --primary: var(--green);
+  --primary-foreground: #f4f8f2;
+  --secondary: var(--green-wash);
+  --secondary-foreground: var(--green);
+  --muted: var(--paper-deep);
+  --muted-foreground: #5d6a62;
+  --accent: var(--green-wash);
+  --accent-foreground: var(--ink);
+  --destructive: var(--red);
+  --border: #d9d8c9;
+  --input: #cfcebd;
+  --ring: color-mix(in oklch, var(--green) 55%, transparent);
+  --radius: 0.625rem;
 }
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
-p { margin: 0; }
+
+@theme inline {
+  --font-sans: 'Geist Variable', ui-sans-serif, sans-serif;
+  --font-heading: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-display: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-green: var(--green);
+  --color-green-bright: var(--green-bright);
+  --color-green-wash: var(--green-wash);
+  --color-amber: var(--amber);
+  --color-amber-wash: var(--amber-wash);
+  --color-red: var(--red);
+  --color-red-wash: var(--red-wash);
+  --color-scope: var(--scope);
+  --color-scope-raised: var(--scope-raised);
+  --color-scope-line: var(--scope-line);
+  --color-scope-text: var(--scope-text);
+  --color-scope-dim: var(--scope-dim);
+  --color-scope-green: var(--scope-green);
+  --color-scope-amber: var(--scope-amber);
+  --color-scope-red: var(--scope-red);
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply min-w-80 bg-background text-foreground;
+    background-image:
+      radial-gradient(60rem 30rem at -10% -10%, color-mix(in oklch, var(--green-wash) 90%, transparent), transparent 70%),
+      radial-gradient(40rem 24rem at 110% 0%, color-mix(in oklch, var(--amber-wash) 55%, transparent), transparent 70%);
+    background-attachment: fixed;
+  }
+  /* Paper grain, fixed so it never scrolls or repaints with content. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--green) 22%, transparent);
+  }
+}
+
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Staggered entrance for groups that appear together. Set --i per item. */
+  .rise-in {
+    animation: rise-in 420ms var(--ease-out-strong) both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+
+  .inspector-entry {
+    transition:
+      opacity 220ms var(--ease-out-strong),
+      translate 220ms var(--ease-out-strong);
+    animation: inspector-flash 1400ms ease-out;
+    @starting-style {
+      opacity: 0;
+      translate: 0 -6px;
+    }
+  }
+
+  .check-draw path {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: check-draw 420ms var(--ease-out-strong) 120ms forwards;
+  }
+
+  .pop-in {
+    transition:
+      opacity 180ms var(--ease-out-strong),
+      scale 180ms var(--ease-out-strong);
+    @starting-style {
+      opacity: 0;
+      scale: 0.9;
+    }
+  }
+
+  .fade-in {
+    transition: opacity 200ms ease;
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@keyframes inspector-flash {
+  0%,
+  35% {
+    background-color: color-mix(in oklch, var(--scope-green) 14%, transparent);
+  }
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation-name: fade-only;
+  }
+  .inspector-entry,
+  .pop-in {
+    transition-property: opacity;
+  }
+  @keyframes fade-only {
+    from {
+      opacity: 0;
+    }
+  }
+}
