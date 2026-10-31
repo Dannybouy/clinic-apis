@@ -103,7 +103,7 @@ function EntryRow({ entry }: { entry: InspectorEntry }) {
   return (
     <li className={cn(fresh && 'inspector-entry')}>
       <Collapsible>
-        <CollapsibleTrigger className="group/entry grid w-full grid-cols-[0.75rem_3.25rem_minmax(0,1fr)_auto] items-center gap-x-2 px-4 py-2.5 text-left font-mono text-[12px] transition-colors duration-150 hover:bg-white/[0.03] focus-visible:bg-white/[0.05] focus-visible:outline-none">
+        <CollapsibleTrigger className="group/entry grid w-full grid-cols-[0.75rem_3.25rem_minmax(0,1fr)_auto] items-center gap-x-2 px-4 py-2.5 text-left font-mono text-[12px] transition-colors duration-150 hover:bg-white/3 focus-visible:bg-white/5 focus-visible:outline-none">
           <ChevronRightIcon className="size-3 text-scope-dim transition-transform duration-200 ease-out group-data-panel-open/entry:rotate-90" />
           <span className={cn('font-semibold', methodTone(entry.method))}>{entry.method}</span>
           <span className="truncate text-scope-text" title={entry.url}>

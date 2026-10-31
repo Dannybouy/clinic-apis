@@ -33,7 +33,7 @@ export default function App() {
         <div className="min-h-dvh">
           <Header inspectorOpen={inspectorOpen} onToggleInspector={toggleInspector} />
 
-          <main className={cn('px-4 pt-10 pb-24 sm:px-6 lg:pt-14', isDesktop && desktopInspector && 'lg:pr-[calc(24rem+1.5rem)] xl:pr-[calc(28rem+2rem)]')}>
+          <main className={cn('px-4 pt-10 pb-24 sm:px-6 lg:pt-14', isDesktop && desktopInspector && 'lg:pr-102 xl:pr-120')}>
             <div className="mx-auto grid max-w-4xl gap-10">
               <Intro />
 
@@ -47,7 +47,7 @@ export default function App() {
                     <ListChecksIcon />
                     My bookings
                   </TabsTrigger>
-                  <TabsPrimitive.Indicator className="absolute bottom-[-1px] left-0 h-0.5 w-(--active-tab-width) translate-x-(--active-tab-left) rounded-full bg-ink transition-[translate,width] duration-250 ease-in-out-strong" />
+                  <TabsPrimitive.Indicator className="absolute -bottom-px left-0 h-0.5 w-(--active-tab-width) translate-x-(--active-tab-left) rounded-full bg-ink transition-[translate,width] duration-250 ease-in-out-strong" />
                 </TabsList>
                 <TabsContent value="book">
                   <SlotBrowser onViewBookings={() => setTab('bookings')} />
@@ -65,7 +65,7 @@ export default function App() {
               aria-hidden={!desktopInspector}
               inert={!desktopInspector}
               className={cn(
-                'fixed top-15 right-0 bottom-0 z-30 w-[24rem] xl:w-[28rem] border-l border-scope-line shadow-[-24px_0_48px_-32px_rgb(13_23_18/0.5)] transition-[translate,opacity] duration-300 ease-drawer',
+                'fixed top-15 right-0 bottom-0 z-30 w-[24rem] xl:w-md border-l border-scope-line shadow-[-24px_0_48px_-32px_rgb(13_23_18/0.5)] transition-[translate,opacity] duration-300 ease-drawer',
                 desktopInspector ? 'translate-x-0' : 'pointer-events-none translate-x-full opacity-0',
               )}
             >

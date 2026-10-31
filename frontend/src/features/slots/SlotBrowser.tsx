@@ -183,7 +183,7 @@ function SlotButton({ slot, now, onPick }: { slot: Slot; now: number; onPick: (s
       aria-label={state === 'free' ? `Book ${label}` : `${label}, ${state === 'booked' ? 'booked' : 'already started'}`}
       data-state={state}
       className={cn(
-        'group/slot relative flex h-11 w-[5.25rem] flex-col items-center justify-center rounded-lg border text-center transition-[background-color,border-color,color,translate,scale,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+        'group/slot relative flex h-11 w-21 flex-col items-center justify-center rounded-lg border text-center transition-[background-color,border-color,color,translate,scale,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
         'data-[state=free]:border-border data-[state=free]:bg-card data-[state=free]:hover:-translate-y-px data-[state=free]:hover:border-green/50 data-[state=free]:hover:bg-green-wash data-[state=free]:hover:shadow-[0_3px_10px_-4px_rgb(31_92_67/0.35)] data-[state=free]:active:translate-y-0 data-[state=free]:active:scale-[0.97]',
         'data-[state=booked]:cursor-not-allowed data-[state=booked]:border-dashed data-[state=booked]:bg-[repeating-linear-gradient(135deg,transparent_0_5px,rgb(27_42_34/0.05)_5px_6px)] data-[state=booked]:text-muted-foreground',
         'data-[state=started]:cursor-not-allowed data-[state=started]:border-transparent data-[state=started]:bg-paper-deep/70 data-[state=started]:text-muted-foreground/80',
@@ -201,7 +201,7 @@ function SlotButton({ slot, now, onPick }: { slot: Slot; now: number; onPick: (s
       {state !== 'free' && (
         <span
           className={cn(
-            'mt-1 rounded-full px-1.5 text-[9.5px] leading-[14px] font-medium tracking-wide uppercase',
+            'mt-1 rounded-full px-1.5 text-[9.5px] leading-3.5 font-medium tracking-wide uppercase',
             state === 'booked' ? 'bg-amber-wash text-amber' : 'bg-foreground/8 text-muted-foreground',
           )}
         >
@@ -244,7 +244,7 @@ function SlotsSkeleton() {
           </div>
           <div className="flex flex-wrap gap-1.5">
             {Array.from({ length: 6 }, (_, j) => (
-              <span key={j} className="h-11 w-[5.25rem] animate-pulse rounded-lg bg-paper-deep" />
+              <span key={j} className="h-11 w-21 animate-pulse rounded-lg bg-paper-deep" />
             ))}
           </div>
         </div>

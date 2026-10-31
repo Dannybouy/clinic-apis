@@ -143,7 +143,7 @@ function BookingsList({ email, onFindSlot }: { email: string; onFindSlot: () => 
       {state.status === 'loading' && state.bookings.length === 0 ? (
         <div className="grid gap-2.5" aria-busy="true" aria-label="Loading bookings">
           {[0, 1].map(i => (
-            <div key={i} className="h-[118px] animate-pulse rounded-xl border bg-card/60" />
+            <div key={i} className="h-29.5 animate-pulse rounded-xl border bg-card/60" />
           ))}
         </div>
       ) : state.status === 'ready' && state.bookings.length === 0 ? (

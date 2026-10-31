@@ -37,7 +37,7 @@ export function EmailChip() {
         render={
           <button
             type="button"
-            className="inline-flex h-8 max-w-[14rem] items-center gap-1.5 rounded-full border bg-card/70 pr-1 pl-2.5 text-[12.5px] transition-[background-color,border-color,scale] duration-150 ease-out hover:border-foreground/25 hover:bg-card focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:scale-[0.97]"
+            className="inline-flex h-8 max-w-56 items-center gap-1.5 rounded-full border bg-card/70 pr-1 pl-2.5 text-[12.5px] transition-[background-color,border-color,scale] duration-150 ease-out hover:border-foreground/25 hover:bg-card focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:scale-[0.97]"
           />
         }
       >
