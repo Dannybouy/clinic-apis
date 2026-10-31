@@ -47,6 +47,17 @@ func (cfg *apiConfig) handlerCreateBooking(w http.ResponseWriter, r *http.Reques
 	params.Name = strings.TrimSpace(params.Name)
 	params.Email = strings.ToLower(strings.TrimSpace(params.Email))
 
+	if params.Email == "" {
+		respondWithError(w, http.StatusBadRequest, "missing required fields", nil)
+		return
+	}
+	// Runs before validation and idempotency so failed attempts and replays count.
+	if retryAfter := cfg.limiter.allow(params.Email, time.Now()); retryAfter > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
+		respondWithError(w, http.StatusTooManyRequests, "too many attempts for this email", nil)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
